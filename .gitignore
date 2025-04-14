@@ -3,3 +3,5 @@ __pycache__
 runs
 *.mp4
 *.pt
+output/detected_video.avi
+player_positions.csv

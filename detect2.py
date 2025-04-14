@@ -40,12 +40,13 @@ def parse_opt():
 
 def show_video(video_path):
     video = open(video_path, "rb").read()
-    encoded_video = b64encode(video).decode('ascii')
-    return HTML(data=f'''
-        <video width="640" height="480" controls>
-            <source src="data:video/mp4;base64,{encoded_video}" type="video/mp4">
-        </video>
-    ''')
+    encoded_video = b64encode(video).decode("ascii")
+    html_str = ("<video width='640' height='480' controls>"
+                "<source src='data:video/mp4;base64," + encoded_video + "' type='video/mp4'>"
+                "</video>")
+    return HTML(data=html_str)
+
+
 
 def preprocess_frame(img, target_size):
     # Convertit l'image de BGR à RGB et la redimensionne avec OpenCV
@@ -164,7 +165,7 @@ def main(opt):
         # --- Phase de Post-traitement ---
         t0 = time.time()
         preds = preds.detach().cpu().numpy()
-        y_preds = (preds > 0.5).astype('float32') * 255
+        y_preds = (preds > 0.75).astype('float32') * 255
         y_preds = y_preds.astype('uint8')
         t_postprocess = time.time() - t0
 
