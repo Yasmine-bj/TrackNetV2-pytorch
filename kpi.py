@@ -8,9 +8,6 @@ from supervision import Color
 # Charger le modèle YOLO (ici "yolo11m.pt")
 model = YOLO("yolo11m.pt")
 
-
-
-
 # Instancier le tracker ByteTrack via Supervision
 tracker = sv.ByteTrack()
 
