@@ -13,8 +13,6 @@ from base64 import b64encode
 import torch.nn.functional as F
 from queue import Queue
 from threading import Thread
-from collections import deque  # Pour stocker la trajectoire
-
 from models.tracknet import TrackNet
 from utils.general import get_shuttle_position
 
@@ -41,11 +39,10 @@ def parse_opt():
 def show_video(video_path):
     video = open(video_path, "rb").read()
     encoded_video = b64encode(video).decode("ascii")
-    html_str = ("<video width='640' height='480' controls>"
-                "<source src='data:video/mp4;base64," + encoded_video + "' type='video/mp4'>"
-                "</video>")
+    html_str = f"""<video width="640" height="480" controls>
+<source src="data:video/mp4;base64,{encoded_video}" type="video/mp4">
+</video>"""
     return HTML(data=html_str)
-
 
 
 def preprocess_frame(img, target_size):
@@ -116,9 +113,6 @@ def main(opt):
         f_save_txt = open(os.path.join(d_save_dir, f"{source_name}.csv"), 'w')
         f_save_txt.write('frame_num,visible,x,y\n')
 
-    # On utilise un deque pour stocker les 10 dernières coordonnées détectées
-    trajectory = deque(maxlen=10)
-
     count = 0
     total_start = time.time()
     total_frames_per_batch = batch_size * sample_size
@@ -165,7 +159,7 @@ def main(opt):
         # --- Phase de Post-traitement ---
         t0 = time.time()
         preds = preds.detach().cpu().numpy()
-        y_preds = (preds > 0.75).astype('float32') * 255
+        y_preds = (preds > 0.5).astype('float32') * 255
         y_preds = y_preds.astype('uint8')
         t_postprocess = time.time() - t0
 
@@ -186,13 +180,7 @@ def main(opt):
                 (visible, cx_pred, cy_pred) = get_shuttle_position(mask)
                 (cx, cy) = (int(cx_pred * w / imgsz[1]), int(cy_pred * h / imgsz[0]))
                 if visible:
-                    # Dessiner le cercle de détection (en rouge)
                     cv2.circle(imgs[local_idx], (cx, cy), 6, (0, 0, 255), -1)
-                    # Ajouter la coordonnée à la trajectoire
-                    trajectory.append((cx, cy))
-                # Dessiner la trajectoire (les 10 dernières détections) sur la frame en vert
-                for pt in trajectory:
-                    cv2.circle(imgs[local_idx], pt, 3, (0, 255, 0), -1)
                 if b_save_txt:
                     f_save_txt.write(f'{global_frame_index},{visible},{cx},{cy}\n')
                 if b_view_img:
@@ -217,7 +205,7 @@ def main(opt):
         f_save_txt.close()
 
     vid_cap.release()
-    # Signal de terminaison pour le thread d'écriture
+    # On signale au thread d'écriture la fin en mettant None dans la file
     video_queue.put(None)
     writer_thread.join()
     out.release()
