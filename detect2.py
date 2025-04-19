@@ -159,7 +159,7 @@ def main(opt):
         # --- Phase de Post-traitement ---
         t0 = time.time()
         preds = preds.detach().cpu().numpy()
-        y_preds = (preds > 0.5).astype('float32') * 255
+        y_preds = (preds > 0.7).astype('float32') * 255
         y_preds = y_preds.astype('uint8')
         t_postprocess = time.time() - t0
 

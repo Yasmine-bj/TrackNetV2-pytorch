@@ -197,7 +197,7 @@ while True:
 
 cap.release()
 out.release()
-cv2.destroyAllWindows()
+
 
 # Enregistrer les données dans un fichier CSV
 df = pd.DataFrame(data)
