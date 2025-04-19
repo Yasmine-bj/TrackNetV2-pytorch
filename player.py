@@ -74,6 +74,6 @@ for r in results:
 # Libérer les ressources
 cap.release()
 out.release()
-cv2.destroyAllWindows()
+
 
 print(f"Vidéo traitée enregistrée dans : {output_video_path}")
