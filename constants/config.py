@@ -6,14 +6,14 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 
 # === Chemins ===
 MODEL_PATH  = ROOT_DIR / "weights" / "yolo11m.pt"
-VIDEO_IN    = ROOT_DIR / "input"   / "enregistrement.mp4"
+VIDEO_IN    = ROOT_DIR / "input"   / "test.mp4"
 VIDEO_OUT   = ROOT_DIR / "output"  / "kpi.mp4"
 CSV_OUT     = ROOT_DIR / "output"  / "player_positions.csv"
 CSV_DIR     = ROOT_DIR / "output"  / "csv"
 KPI_OUT     = CSV_DIR  / "kpi_summary.csv"
 
 # === Seuils ===
-CONF_THRES  = 0.3   # seuil de confiance YOLO
+CONF_THRES  = 0.05   # seuil de confiance YOLO
 
 # === Polygones ===
 TERRAIN_POLYGON = np.array([

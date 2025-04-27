@@ -48,4 +48,4 @@ class RoleClassifier:
 
         is_attack = zone is not None and self._in_zone(zone, x, y)
         is_defense = not is_attack
-        return is_attack, is_defense, zon
+        return is_attack, is_defense, zone
