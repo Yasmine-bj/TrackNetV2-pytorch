@@ -73,6 +73,8 @@ def main(opt):
     d_save_dir = str(opt.project)
     f_weights = str(opt.weights)
     f_source = str(opt.source)
+
+
     imgsz = opt.imgsz  # [hauteur, largeur]
     batch_size = opt.batch_size
     sample_size = 3  # Nombre fixe de frames par échantillon
@@ -124,6 +126,8 @@ def main(opt):
 
     while True:
         t0 = time.time()
+        
+
         imgs = []
         for _ in range(total_frames_per_batch):
             ret, img = vid_cap.read()
@@ -221,7 +225,7 @@ def main(opt):
     writer_thread.join()
     out.release()
 
-    show_video(os.path.join(d_save_dir, f"{source_name}.mp4"))
+   
 
 if __name__ == '__main__':
     opt = parse_opt()
