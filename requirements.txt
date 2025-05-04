@@ -45,6 +45,10 @@ IPython
 ultralytics
 supervision
 
+parse==1.19.1
+imageio==2.34.0           # dernière stable
+imageio-ffmpeg==0.5.1     # plugin vidéo (installé automatiquement avec imageio[ffmpeg])
+
 
 # python -m pip uninstall  opencv-python
 

@@ -49,3 +49,17 @@ class RoleClassifier:
         is_attack = zone is not None and self._in_zone(zone, x, y)
         is_defense = not is_attack
         return is_attack, is_defense, zone
+
+class BallRecorder:
+    def __init__(self):
+        self._rows = []
+    def record(self, frame_num:int, x:int|None, y:int|None, vis:float):
+        self._rows.append({
+            "frame_num": frame_num,
+            "x": x if vis else None,
+            "y": y if vis else None,
+            "visibility": vis
+        })
+    def to_dataframe(self):
+        import pandas as pd
+        return pd.DataFrame(self._rows)
