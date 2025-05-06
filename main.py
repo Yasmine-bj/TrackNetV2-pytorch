@@ -4,7 +4,7 @@ import supervision as sv
 
 from constants.config import (
     VIDEO_IN, VIDEO_OUT,
-    CSV_OUT, KPI_OUT, BALL_CSV_OUT
+    CSV_OUT, KPI_OUT, BALL_CSV_OUT,attack_zone_colors,TERRAIN_POLYGON,ATTACK_ZONES
 )
 from tracker import (
     YOLODetector, ByteTracker, Annotators,
@@ -15,6 +15,7 @@ from analytics import (
 )
 from kpi import KPI, CSVExporter
 from tracknet_wrapper import TrackNetWrapper
+
 
 
 def main():
@@ -58,7 +59,8 @@ def main():
     brec  = BallRecorder()
     idmgr = TrackIDManager(pool_size=4)
 
-    tnet  = TrackNetWrapper()                 # TrackNet sur GPU
+    tnet = TrackNetWrapper()     # TrackNet sur GPU
+             
 
     frame_id   = 0
     total_start = time.time()
@@ -68,6 +70,11 @@ def main():
         ok, frame = cap.read()
         if not ok:
             break
+        
+        
+        # Ajouter la ligne du terrain et des zones d'attaque à la fin
+        for zone, color in zip(ATTACK_ZONES, attack_zone_colors):
+            frame = ann.fill_polygons(frame, [zone], color=color)
 
         # ---- joueurs --------------------------------------------------
         res  = det.detect(frame)
@@ -100,6 +107,19 @@ def main():
             col = (0,255,0) if is_a else (0,0,255)
             cv2.putText(annotated, txt, (int(x), int(y)-10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, col, 2)
+        
+        
+        # ---- Ajouter les lignes des polygones -------------------------
+        
+
+
+        # # Ajouter la ligne du terrain et des zones d'attaque à la fin
+        # annotated = ann.draw_polygons(annotated, [TERRAIN_POLYGON], color=(0, 255, 0), thickness=3)
+        # surface attaque
+        # for zone, color in zip(ATTACK_ZONES, attack_zone_colors):
+        #     annotated = ann.fill_polygons(annotated, [zone], color=color)
+
+        
 
         # ---- push frame -> queue --------------------------------------
         try:

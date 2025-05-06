@@ -6,7 +6,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 
 # === Chemins ===
 MODEL_PATH  = ROOT_DIR / "weights" / "yolo11m.pt"
-VIDEO_IN    = ROOT_DIR / "input"   / "enregistrement.mp4"  
+VIDEO_IN    = ROOT_DIR / "input"   / "this.mp4"  
 VIDEO_OUT   = ROOT_DIR / "output"  / "kpi.mp4"
 CSV_OUT     = ROOT_DIR / "output"  / "player_positions.csv"
 CSV_DIR     = ROOT_DIR / "output"  / "csv"
@@ -14,11 +14,20 @@ KPI_OUT     = CSV_DIR  / "kpi_summary.csv"
 
 # TrackNet ------------------------------------------------------------------
 TRACKNET_CKPT      = ROOT_DIR / "weights" / "TrackNet_best.pt"
-TRACKNET_CONF      = 0.40      # seuil heatmap
+TRACKNET_CONF      = 0.3      # seuil heatmap
 TRACKNET_TRAJ_LEN  = 8         # longueur trajectoire affichée
 BALL_CSV_OUT       = ROOT_DIR / "output" / "ball_positions.csv"
 
 DEBUG_TRACKNET     = True      # mettre False pour désactiver les prints
+
+
+# Définissez vos couleurs distinctes pour chaque zone d'attaque (BGR)
+attack_zone_colors = [
+    (0, 0, 255),    # Rouge
+    (0, 255, 255),  # Jaune
+    (255, 0, 0),    # Bleu
+    (0, 255, 0),    # Vert
+]
 
 
 

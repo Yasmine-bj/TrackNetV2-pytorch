@@ -141,20 +141,48 @@ class TrackIDManager:
         return new_mapping
 
 
+import cv2
+import numpy as np
+import supervision as sv
+from constants.config import TERRAIN_POLYGON, ATTACK_ZONES
+
+import cv2
+import numpy as np
+import supervision as sv
+from constants.config import TERRAIN_POLYGON, ATTACK_ZONES
+
 class Annotators:
     def __init__(self):
         from supervision import Color, BoxAnnotator, LabelAnnotator
-        col = Color(0,0,0)
-        self.box   = BoxAnnotator(color=col, thickness=2)
+        col = Color(0, 0, 0)
+        self.box = BoxAnnotator(color=col, thickness=2)
         self.label = LabelAnnotator(color=col)
+
     def apply(self, frame, detections, labels):
-        f = self.box.annotate(frame, detections)
-        return self.label.annotate(f, detections, labels=labels)
+        frame = self.box.annotate(frame, detections)
+        return self.label.annotate(frame, detections, labels=labels)
+
+    @staticmethod
+    def draw_polygons(frame, polygons, color=(0, 255, 0), thickness=2):
+        for polygon in polygons:
+            pts = np.array(polygon, np.int32)
+            cv2.polylines(frame, [pts], isClosed=True, color=color, thickness=thickness)
+        return frame
+
+    @staticmethod
+    def fill_polygons(frame, polygons, color=(0, 255, 0), alpha=0.4):
+        overlay = frame.copy()
+        for polygon in polygons:
+            pts = np.array(polygon, np.int32)
+            cv2.fillPoly(overlay, [pts], color=color)
+        return cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
+
 
 def filter_on_terrain(detections: sv.Detections) -> sv.Detections:
-    valid = []
-    for i, (x1, y1, x2, y2) in enumerate(detections.xyxy):
-        if (cv2.pointPolygonTest(TERRAIN_POLYGON, (int(x1), int(y2)), False) >= 0
-           and cv2.pointPolygonTest(TERRAIN_POLYGON, (int(x2), int(y2)), False) >= 0):
-            valid.append(i)
-    return detections[valid]
+        valid = []
+        terrain_poly = np.array(TERRAIN_POLYGON, np.int32)
+        for i, (x1, y1, x2, y2) in enumerate(detections.xyxy):
+            if (cv2.pointPolygonTest(terrain_poly, (int(x1), int(y2)), False) >= 0
+                and cv2.pointPolygonTest(terrain_poly, (int(x2), int(y2)), False) >= 0):
+                valid.append(i)
+        return detections[valid]
