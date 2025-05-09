@@ -42,4 +42,4 @@ def start_match():
         return jsonify({"error": f"Recording failed for {match_id}"}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050)
+    app.run(host='0.0.0.0', port=1500)
