@@ -56,6 +56,10 @@ imageio-ffmpeg==0.5.1     # plugin vidéo (installé automatiquement avec imagei
 # python -m pip install --no-cache-dir opencv-python-headless==4.11.0.86
 
 
+ffmpeg-python
+Flask==2.2.5
+
+
 
 
 

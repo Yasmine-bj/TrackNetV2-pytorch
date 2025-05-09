@@ -3,14 +3,13 @@ import numpy as np
 import supervision as sv
 from ultralytics import YOLO
 from collections import deque
-
 from supervision.detection.overlap_filter import box_non_max_merge
 from constants.config import (
     MODEL_PATH,
     CONF_THRES,
     TERRAIN_POLYGON,
-    # ajoutez ceci si vous voulez paramétrer le seuil d’IoU pour le merge
-    # OVERLAP_IOU_THRESH
+    ATTACK_ZONES,
+    ZONE_POLYGONS
 )
 
 class YOLODetector:
@@ -29,6 +28,8 @@ class ByteTracker:
             lost_track_buffer=100,
             minimum_matching_threshold=0.75
         )
+
+    # methode pour mise a jour du tracker ( fusion des detections dans une frame dans un seul objet) 
 
     def update(self, detections: sv.Detections) -> sv.Detections:
         # 1) Construction du tableau preds pour overlap_filter
@@ -68,88 +69,132 @@ class ByteTracker:
         # 4) On peut maintenant lancer le tracker sur ces détections fusionnées
         return self._trk.update_with_detections(detections)
 
-# Gestion des IDs (pool fixe de 4 joueurs) avec proximité spatiale
+
+
+
+# Gestion des IDs (pool fixe de 4 joueurs) avec proximité spatiale et premiere assignation selon zone 
+
+
 class TrackIDManager:
-    def __init__(self, pool_size=4):
+    def __init__(self, pool_size=4, zone_polygons=None):
         self.pool_ids = list(range(1, pool_size + 1))
-        # mapping internal tracker ID -> assigned ID
         self.internal_to_assigned = {}
-        # last known positions of assigned IDs: assigned ID -> (x, y)
         self.last_positions = {}
-        # queue des IDs libres (sans ordre fixe)
-        self.freed_ids = deque(self.pool_ids)
-        # internals actifs de la frame précédente
+        self.freed_ids = deque()  # IDs libérés après disparition
         self.prev_internals = set()
+        self.zone_polygons = zone_polygons or {}
+        self.zone_assigned = set()  # garde trace des zones déjà attribuées
+        self.initial_assignment_done = False
+
+    def point_in_polygon(self, point, polygon):
+        return cv2.pointPolygonTest(polygon, point, False) >= 0
+
+    def assign_zone_based_id(self, point):
+        for zone_id, polygon in self.zone_polygons.items():
+            if zone_id not in self.zone_assigned and self.point_in_polygon(point, polygon):
+                return zone_id
+        return None
 
     def update(self, current_internals, centroids):
-        """
-        current_internals: list of tracker internal IDs
-        centroids: dict internal ID -> (x, y) for this frame
-        """
+        
+        # Met à jour le mapping des IDs visibles (assigned IDs) pour les objets détectés à partir des IDs internes du tracker.
+
+        # Flux détaillé :
+        # 1️⃣ Libérer les IDs dont les objets ont disparu :
+        #     - Compare les IDs internes de la frame précédente à ceux de la frame actuelle.
+        #     - Les IDs internes disparus libèrent leurs assigned IDs, qui sont mis en attente dans `freed_ids`.
+
+        # 2️⃣ Conserver les mappings déjà existants :
+        #     - Pour les objets toujours présents, conserve l’assignation précédente sans modification.
+
+        # 3️⃣ Assigner les IDs aux nouveaux objets détectés :
+        #     a) Si c’est le premier passage (avant que les zones 1–4 soient toutes attribuées) :
+        #         - Utilise les zones (polygones) pour assigner les IDs 1, 2, 3, 4
+        #           selon où se trouve l’objet dans le terrain.
+        #         - Marque chaque zone comme déjà attribuée dès qu’un ID est donné.
+
+        #     b) Après la première attribution :
+        #         - Si un seul ID est libre, on l’attribue directement au prochain nouvel objet.
+        #         - Si plusieurs IDs sont libres, on calcule la distance entre les nouvelles détections et 
+        #           les dernières positions connues, et on choisit l’ID le plus proche.
+        #         - S’il n’y a plus d’ID libre, on recycle circulairement les IDs à l’aide d’un modulo.
+
+        # 4️⃣ Mettre à jour les positions des assigned IDs :
+        #     - Enregistre la position actuelle (centroïde) des objets pour le prochain calcul de proximité.
+
+        # Retour :
+        #     - Un dictionnaire `{ internal_id → assigned_id }` contenant les nouvelles associations
+        #       pour tous les objets actifs dans la frame actuelle.
+        
+
         new_mapping = {}
-        # 1) libérer les IDs pour les internes disparus
         disappeared = self.prev_internals - set(current_internals)
+
+        # 1) Libérer les IDs pour les internes disparus
         for old in disappeared:
             assigned = self.internal_to_assigned.pop(old)
-            # stocke position pour réassignation
             self.last_positions[assigned] = self.last_positions.get(assigned)
             self.freed_ids.append(assigned)
 
-        # 2) conserver mapping pour internals toujours présents
+        # 2) Conserver les mappings déjà existants
         for tid, aid in self.internal_to_assigned.items():
             new_mapping[tid] = aid
 
-        # 3) assigner IDs aux nouveaux internals en fonction de la proximité
+        # 3) Assigner les nouveaux
         unassigned = [tid for tid in current_internals if tid not in new_mapping]
+
         for tid in unassigned:
-            if self.freed_ids:
-                # si plusieurs IDs libres, choisir le plus proche
+            cx, cy = centroids.get(tid, (None, None))
+
+            # --- PREMIÈRE ASSIGNATION PAR ZONE ---
+            if not self.initial_assignment_done:
+                if cx is not None and cy is not None:
+                    assigned_zone_id = self.assign_zone_based_id((cx, cy))
+                    if assigned_zone_id:
+                        new_mapping[tid] = assigned_zone_id
+                        self.zone_assigned.add(assigned_zone_id)
+                        if len(self.zone_assigned) == len(self.pool_ids):
+                            self.initial_assignment_done = True
+                        continue  # passe à la détection suivante
+
+            # --- APRÈS PREMIÈRE ATTRIBUTION ---
+            if len(self.freed_ids) == 1:
+                # Un seul ID libre → réutilise-le directement
+                aid = self.freed_ids.popleft()
+                new_mapping[tid] = aid
+            elif len(self.freed_ids) > 1:
+                # Plusieurs IDs libres → choisit le plus proche
                 best_id = None
                 best_dist = float('inf')
-                cx, cy = centroids.get(tid, (None, None))
-                # si pas de position, fallback au premier libre
-                if cx is None:
-                    aid = self.freed_ids.popleft()
-                else:
+                if cx is not None:
                     for aid_candidate in list(self.freed_ids):
                         last_pos = self.last_positions.get(aid_candidate)
                         if last_pos:
-                            dist = (cx - last_pos[0])**2 + (cy - last_pos[1])**2
-                        else:
-                            dist = float('inf')
-                        if dist < best_dist:
-                            best_dist = dist
-                            best_id = aid_candidate
-                    if best_id is None:
-                        aid = self.freed_ids.popleft()
-                    else:
-                        aid = best_id
-                        self.freed_ids.remove(best_id)
-                new_mapping[tid] = aid
+                            dist = (cx - last_pos[0]) ** 2 + (cy - last_pos[1]) ** 2
+                            if dist < best_dist:
+                                best_dist = dist
+                                best_id = aid_candidate
+                if best_id is not None:
+                    self.freed_ids.remove(best_id)
+                    new_mapping[tid] = best_id
+                else:
+                    # fallback si aucune position connue
+                    aid = self.freed_ids.popleft()
+                    new_mapping[tid] = aid
             else:
-                # plus d'IDs disponibles, recycle circulaire
+                # Pas d’IDs libres → recycle circulairement
                 new_mapping[tid] = ((tid - 1) % len(self.pool_ids)) + 1
 
-        # 4) mettre à jour last_positions pour tous
+        # 4) Mettre à jour les positions connues
         for tid, aid in new_mapping.items():
             if tid in centroids:
                 self.last_positions[aid] = centroids[tid]
 
-        # 5) sauvegarder mapping et internals pour next frame
         self.internal_to_assigned = new_mapping
         self.prev_internals = set(current_internals)
         return new_mapping
 
 
-import cv2
-import numpy as np
-import supervision as sv
-from constants.config import TERRAIN_POLYGON, ATTACK_ZONES
-
-import cv2
-import numpy as np
-import supervision as sv
-from constants.config import TERRAIN_POLYGON, ATTACK_ZONES
 
 class Annotators:
     def __init__(self):

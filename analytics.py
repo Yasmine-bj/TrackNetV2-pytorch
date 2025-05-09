@@ -23,32 +23,32 @@ class PositionRecorder:
     def to_dataframe(self) -> pd.DataFrame:
         return pd.DataFrame(self._rows)
 
+        
 class RoleClassifier:
     """
-    Associe une zone d'attaque à chaque joueur, puis détermine attaque vs défense.
+    Associe directement chaque joueur à sa zone d'attaque (selon son ID),
+    puis détermine s'il est en attaque ou en défense.
     """
     def __init__(self):
-        self.zones = ATTACK_ZONES
-        self.player_zone: dict[int, int|None] = {}
+        self.zones = ATTACK_ZONES  # liste : [ATTACK_ZONE_1, ATTACK_ZONE_2, ATTACK_ZONE_3, ATTACK_ZONE_4]
 
-    def _in_zone(self, idx: int, x: float, y: float) -> bool:
-        return cv2.pointPolygonTest(self.zones[idx], (int(x), int(y)), False) >= 0
+    def _in_zone(self, polygon, x: float, y: float) -> bool:
+        return cv2.pointPolygonTest(polygon, (int(x), int(y)), False) >= 0
 
-    def classify(self, player_id: int, x: float, y: float) -> tuple[bool,bool,int|None]:
-        if player_id not in self.player_zone:
-            self.player_zone[player_id] = None
-        zone = self.player_zone[player_id]
+    def classify(self, player_id: int, x: float, y: float) -> tuple[bool, bool, int | None]:
+        # Déduire la zone d’attaque directement depuis l’ID joueur
+        if player_id < 1 or player_id > len(self.zones):
+            # ID invalide
+            return False, True, None
 
-        if zone is None:
-            for i in range(len(self.zones)):
-                if self._in_zone(i, x, y):
-                    self.player_zone[player_id] = i
-                    zone = i
-                    break
+        attack_zone_idx = player_id - 1  # correspondance : ID 1 → index 0, ID 2 → index 1, etc.
+        attack_zone = self.zones[attack_zone_idx]
 
-        is_attack = zone is not None and self._in_zone(zone, x, y)
+        is_attack = self._in_zone(attack_zone, x, y)
         is_defense = not is_attack
-        return is_attack, is_defense, zone
+
+        return is_attack, is_defense, attack_zone_idx
+
 
 class BallRecorder:
     def __init__(self):

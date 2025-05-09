@@ -15,13 +15,18 @@ from analytics import (
 )
 from kpi import KPI, CSVExporter
 from tracknet_wrapper import TrackNetWrapper
-
+import sys
 
 
 def main():
+    # Vérifier si un chemin vidéo est passé en argument
+    if len(sys.argv) > 1:
+        video_path = sys.argv[1]
+    else:
+        video_path = str(VIDEO_IN)  # Utiliser la valeur par défaut si aucun argument n'est passé
 
     # ------------- ouverture vidéo + encodeur ---------------------------
-    cap = cv2.VideoCapture(str(VIDEO_IN))
+    cap = cv2.VideoCapture(video_path)
     w   = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     h   = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -81,7 +86,15 @@ def main():
         dets = sv.Detections.from_ultralytics(res)
         if dets.xyxy.size:
             dets = filter_on_terrain(dets)
-        dets = trk.update(dets)
+        # // fusion des détections
+        dets = trk.update(dets) 
+
+            # C’est une compréhension de dictionnaire ({clé: valeur for ...})
+            # qui construit un dictionnaire centroids où :
+
+            # clé = tid → l’ID interne attribué par le tracker (par exemple : 5, 7, 12…)
+
+            # valeur = un tuple ( (x1 + x2) / 2, y2 )
 
         centroids = {tid: ((x1+x2)/2, y2)
                      for (x1,y1,x2,y2), tid in zip(dets.xyxy, dets.tracker_id)}

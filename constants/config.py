@@ -6,7 +6,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 
 # === Chemins ===
 MODEL_PATH  = ROOT_DIR / "weights" / "yolo11m.pt"
-VIDEO_IN    = ROOT_DIR / "input"   / "this.mp4"  
+VIDEO_IN    = ROOT_DIR / "input"   / "enregistrement.mp4"  
 VIDEO_OUT   = ROOT_DIR / "output"  / "kpi.mp4"
 CSV_OUT     = ROOT_DIR / "output"  / "player_positions.csv"
 CSV_DIR     = ROOT_DIR / "output"  / "csv"
@@ -55,7 +55,7 @@ TERRAIN_POLYGON = np.array([
 # ], np.int32).reshape((-1, 1, 2))
 
 
-ATTACK_ZONE_1 = np.array([
+ATTACK_ZONE_2 = np.array([
     [911, 698],[1207, 696],[1690, 679],[1554, 453],
     [1422, 276],[925, 248],[915, 491]
 ], np.int32).reshape((-1,1,2))
@@ -69,7 +69,7 @@ ATTACK_ZONE_1 = np.array([
 # ], np.int32).reshape((-1, 1, 2))
 
 
-ATTACK_ZONE_2 = np.array([
+ATTACK_ZONE_1 = np.array([
     [439, 264],[297, 440],[157, 663],[408, 679],
     [912, 696],[915, 456],[925, 247],[647, 250]
 ], np.int32).reshape((-1,1,2))
@@ -113,3 +113,75 @@ ATTACK_ZONES = [
     ATTACK_ZONE_3,
     ATTACK_ZONE_4,
 ]
+
+
+ZONE_POLYGONS = {
+    1: np.array([
+        [439, 265],
+        [295, 440],
+        [203, 582],
+        [128, 720],
+        [76, 849],
+        [45, 964],
+        [285, 1031],
+        [561, 1079],
+        [912, 1079],
+        [910, 697],
+        [916, 448],
+        [926, 248],
+        [806, 248],
+        [640, 249]
+    ], dtype=np.int32),
+
+    
+
+    2:np.array([
+    [926, 248],
+    [918, 426],
+    [911, 575],
+    [912, 698],
+    [912, 1077],
+    [1291, 1077],
+    [1584, 1038],
+    [1817, 982],
+    [1781, 871],
+    [1692, 679],
+    [1556, 456],
+    [1421, 274],
+    [1251, 263],
+    [1037, 251]
+    ], dtype=np.int32),
+
+
+
+    3: np.array([
+        [937, 58],
+        [937, 94],
+        [931, 174],
+        [926, 246],
+        [1074, 251],
+        [1326, 261],
+        [1409, 262],
+        [1318, 164],
+        [1268, 112],
+        [1228, 73],
+        [1128, 66],
+        [1004, 59]
+    ], dtype=np.int32),
+
+    4: np.array([
+        [653, 66],
+        [772, 59],
+        [939, 58],
+        [936, 95],
+        [930, 177],
+        [926, 248],
+        [739, 248],
+        [614, 250],
+        [447, 255],
+        [546, 159],
+        [609, 103]
+    ], dtype=np.int32),
+
+}
+
