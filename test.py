@@ -5,7 +5,7 @@ from constants.config import (
 )
 
 
-img = cv2.imread('input/terrain.png')  # ton image de référence
+img = cv2.imread('input/too.png')  # ton image de référence
 
 for zone_id, polygon in ZONE_POLYGONS.items():
     cv2.polylines(img, [polygon], isClosed=True, color=(0, 255, 0), thickness=2)
@@ -29,4 +29,4 @@ for idx, attack_polygon in enumerate(ATTACK_ZONES, start=1):
                     1, (255, 0, 0), 2, cv2.LINE_AA)
 
 
-cv2.imwrite('output/zones_debug.jpg', img)
+cv2.imwrite('output/zones_debug2.jpg', img)

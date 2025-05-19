@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
+from constants.config import Config
+from storage.s3_handler import S3Handler
+
 import os, cv2, time, threading, queue
 import supervision as sv
 
@@ -16,9 +24,23 @@ from analytics import (
 from kpi import KPI, CSVExporter
 from tracknet_wrapper import TrackNetWrapper
 import sys
+import json
+
+
+import asyncio
+
+
 
 
 def main():
+
+    # Lire le mapping des joeurs depuis le fichier temporaire
+    id_to_name = {}
+    if os.path.exists("id_to_name.json"):
+        with open("id_to_name.json", "r") as f:
+            id_to_name = json.load(f)
+
+
     # Vérifier si un chemin vidéo est passé en argument
     if len(sys.argv) > 1:
         video_path = sys.argv[1]
@@ -65,6 +87,11 @@ def main():
     idmgr = TrackIDManager(pool_size=4)
 
     tnet = TrackNetWrapper()     # TrackNet sur GPU
+
+
+    # Instanciation config + handler
+    config = Config()
+    s3_handler= S3Handler(config)
              
 
     frame_id   = 0
@@ -100,7 +127,17 @@ def main():
                      for (x1,y1,x2,y2), tid in zip(dets.xyxy, dets.tracker_id)}
 
         mapping  = idmgr.update(dets.tracker_id, centroids)
-        labels   = [f"#{mapping[tid]}" for tid in dets.tracker_id]
+        # // on applique le mapping pour obtenir les IDs assignés
+        if id_to_name:
+            labels = []
+            for tid in dets.tracker_id:
+                assigned_id = mapping[tid]
+                name = id_to_name.get(str(assigned_id), "")
+                labels.append(f"#{assigned_id} {name}")
+        else:
+            labels = [f"#{mapping[tid]}" for tid in dets.tracker_id]
+
+
         annotated = ann.apply(frame.copy(), dets, labels)
 
         # ---- balle ----------------------------------------------------
@@ -141,6 +178,14 @@ def main():
             pass
 
         frame_id += 1
+
+    # ---------------- Appload sans S3------------------------------
+    upload_url = asyncio.run(s3_handler.upload_file(str(VIDEO_OUT)))
+
+    if upload_url:
+        print(f"✅ Vidéo uploadée avec succès sur S3 : {upload_url}")
+    else:
+        print("❌ Échec de l'upload vers S3.")
 
     # ---------------- nettoyage & export ------------------------------
     cap.release()

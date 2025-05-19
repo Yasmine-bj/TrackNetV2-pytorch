@@ -57,7 +57,13 @@ imageio-ffmpeg==0.5.1     # plugin vidéo (installé automatiquement avec imagei
 
 
 ffmpeg-python
-Flask==2.2.5
+
+boto3
+python-dotenv
+
+boto3==1.34.0
+botocore==1.34.0
+
 
 
 

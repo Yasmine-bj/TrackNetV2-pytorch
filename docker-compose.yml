@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "1500:1500"
+    volumes:
+      - ./Enregistrement/recordings:/app/Enregistrement/recordings
+      - ./output:/app/output
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=api/app.py
+    restart: unless-stopped

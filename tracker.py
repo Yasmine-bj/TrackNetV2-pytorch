@@ -104,7 +104,7 @@ class TrackIDManager:
         #     - Compare les IDs internes de la frame précédente à ceux de la frame actuelle.
         #     - Les IDs internes disparus libèrent leurs assigned IDs, qui sont mis en attente dans `freed_ids`.
 
-        # 2️⃣ Conserver les mappings déjà existants :
+        # 2️⃣ Conserver les mappings déjà existants:
         #     - Pour les objets toujours présents, conserve l’assignation précédente sans modification.
 
         # 3️⃣ Assigner les IDs aux nouveaux objets détectés :
@@ -113,16 +113,16 @@ class TrackIDManager:
         #           selon où se trouve l’objet dans le terrain.
         #         - Marque chaque zone comme déjà attribuée dès qu’un ID est donné.
 
-        #     b) Après la première attribution :
+        #     b) Après la première attribution:
         #         - Si un seul ID est libre, on l’attribue directement au prochain nouvel objet.
         #         - Si plusieurs IDs sont libres, on calcule la distance entre les nouvelles détections et 
         #           les dernières positions connues, et on choisit l’ID le plus proche.
         #         - S’il n’y a plus d’ID libre, on recycle circulairement les IDs à l’aide d’un modulo.
 
-        # 4️⃣ Mettre à jour les positions des assigned IDs :
+        # 4️⃣ Mettre à jour les positions des assigned IDs:
         #     - Enregistre la position actuelle (centroïde) des objets pour le prochain calcul de proximité.
 
-        # Retour :
+        # Retour:
         #     - Un dictionnaire `{ internal_id → assigned_id }` contenant les nouvelles associations
         #       pour tous les objets actifs dans la frame actuelle.
         
@@ -157,7 +157,7 @@ class TrackIDManager:
                             self.initial_assignment_done = True
                         continue  # passe à la détection suivante
 
-            # --- APRÈS PREMIÈRE ATTRIBUTION ---
+            # --- APRÈS PREMIÈRE ATTRIBUTION---
             if len(self.freed_ids) == 1:
                 # Un seul ID libre → réutilise-le directement
                 aid = self.freed_ids.popleft()

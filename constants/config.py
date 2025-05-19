@@ -1,5 +1,30 @@
 from pathlib import Path
-import numpy as np
+import numpy as  np
+import os
+
+
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # ← Obligatoire pour charger .env dans os.environ
+
+API_BASE_URL = os.getenv("API_BASE_URL")
+LOGIN_CREDENTIALS = {
+    "login": os.getenv("LOGIN"),
+    "password": os.getenv("PASSWORD")
+}
+
+
+
+
+class Config:
+    s3_enabled = True
+    s3_key = os.getenv("S3_ACCESS_KEY")
+    s3_secret = os.getenv("S3_SECRET_KEY")
+    s3_bucket = os.getenv("S3_BUCKET_NAME")
+    s3_endpoint = os.getenv("S3_ENDPOINT")
+    s3_public_endpoint = os.getenv("S3_PUBLIC_ENDPOINT")
 
 # Racine du projet
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -80,9 +105,6 @@ ATTACK_ZONE_1 = np.array([
 #     [1333, 242], [1316, 227], [1266, 224], [1176, 219],
 #     [1080, 214], [1014, 212]
 # ], np.int32).reshape((-1, 1, 2))
-
-
-
 
 
 ATTACK_ZONE_3 = np.array([
