@@ -34,7 +34,9 @@ def main():
 
         # Lancer le traitement IA sur la vidéo enregistrée
         logging.info(f"[{match_id}] Lancement du traitement IA sur la vidéo.")
-        process_ia(video_path)
+        
+        
+        process_ia(video_path, output_video_path)       
     else:
         logging.error(f"[{match_id}] Échec de l'enregistrement.")
 

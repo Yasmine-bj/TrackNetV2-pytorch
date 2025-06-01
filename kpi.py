@@ -1,15 +1,25 @@
 class KPI:
     @staticmethod
-    def calculate(df):
+    def calculate(df, faults_per_player=None):
+        """
+        faults_per_player : dict {player_id: nb_faults}
+        """
         total = len(df["frame_num"].unique())
-        return [
-            {
-                "player_id": pid,
-                "attack_pct": pdata["attack"].sum()/total*100,
-                "defense_pct": pdata["defense"].sum()/total*100,
+        result = []
+        for pid, pdata in df.groupby("player_id"):
+            row = {
+                "player_id":  pid,
+                "attack_pct": pdata["attack"].sum()  / total * 100,
+                "defense_pct":pdata["defense"].sum() / total * 100,
             }
-            for pid, pdata in df.groupby("player_id")
-        ]
+            # nouvelle colonne si le dict est fourni
+            if faults_per_player and pid in faults_per_player:
+                row["fault_filet"] = faults_per_player[pid]
+            result.append(row)
+        return result
+
+
+
 
 class CSVExporter:
     def __init__(self, path):

@@ -17,7 +17,7 @@ def record_http_stream(match_id, duration_seconds, stream_url, output_dir):
     
     Args:
         match_id (str): Identifiant du match (nom du fichier de sortie sans extension).
-        duration_seconds (int): Durée maximale de l’enregistrement en secondes.
+        duration_seconds (int): Durée maximale de l'enregistrement en secondes.
         stream_url (str): URL du flux HTTP.
         output_dir (str): Dossier de sortie pour enregistrer la vidéo.
 
@@ -43,12 +43,12 @@ def record_http_stream(match_id, duration_seconds, stream_url, output_dir):
     out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
 
     def _record():
-        logging.info(f"[{match_id}] Début de l’enregistrement threadé pour {duration_seconds} secondes.")
+        logging.info(f"[{match_id}] Début de l'enregistrement threadé pour {duration_seconds} secondes.")
         start_time = time.time()
         while time.time() - start_time < duration_seconds:
             ret, frame = cap.read()
             if not ret:
-                logging.warning(f"[{match_id}] Problème lors de la lecture du flux. Arrêt de l’enregistrement.")
+                logging.warning(f"[{match_id}] Problème lors de la lecture du flux. Arrêt de l'enregistrement.")
                 break
             out.write(frame)
         cap.release()
@@ -61,16 +61,17 @@ def record_http_stream(match_id, duration_seconds, stream_url, output_dir):
 
     return True, thread
 
-def process_ia(video_path):
+def process_ia(video_path, output_video_path):
     """
     Appelle le pipeline IA pour traiter la vidéo enregistrée.
     
     Args:
         video_path (str): Chemin de la vidéo à traiter.
+        output_video_path (str): Chemin de sortie de la vidéo annotée.
     """
     try:
-        # Appeler le script principal de traitement IA
-        result = run(["python3", "/home/octomiro1/Documents/octovar/TrackNetV2-pytorch/main.py", video_path], check=True)
+        # Appeler le script principal de traitement IA avec deux arguments
+        result = run(["python3", "/app/main.py", video_path, output_video_path], check=True)
         logging.info(f"Traitement IA terminé avec succès pour la vidéo : {video_path}")
     except Exception as e:
         logging.error(f"Erreur lors du traitement IA : {e}")

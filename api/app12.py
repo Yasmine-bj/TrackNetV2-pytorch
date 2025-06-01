@@ -37,9 +37,11 @@ def start_match():
         # Lancer le traitement IA
         logging.info(f"[{match_id}] Launching IA pipeline.")
         process_ia(video_path)
+        
 
         # Lire le fichier CSV et construire la réponse JSON
         csv_file = "output/csv/kpi_summary.csv"
+        # csv_file = "/home/octomiro1/Documents/octovar/TrackNetV2-pytorch/output/csv/kpi_summary.csv"
         if not os.path.exists(csv_file):
             return jsonify({"error": "kpi_summary.csv not found"}), 500
 
@@ -47,14 +49,21 @@ def start_match():
         with open(csv_file, mode='r') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                # Skip lines where player_id is empty or non-numeric
-                if not row['player_id'].isdigit():
+                print("🔎 Raw row:", row)
+                try:
+                    player_id = str(int(float(row['player_id'])))
+                    attack = float(row['attack_pct'])
+                    defense = float(row['defense_pct'])
+                    result_data.append({
+                        'player_id': player_id,
+                        'attack_pct': attack,
+                        'defense_pct': defense
+                    })
+                except Exception as e:
+                    print("❌ Error parsing row:", row, "->", e)
                     continue
-                result_data.append({
-                    'player_id': row['player_id'],
-                    'attack_pct': float(row['attack_pct']),
-                    'defense_pct': float(row['defense_pct'])
-                })
+            # skip invalid rows
+
 
 
         return jsonify({

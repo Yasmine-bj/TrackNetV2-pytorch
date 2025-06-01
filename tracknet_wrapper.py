@@ -1,11 +1,11 @@
 """
 TrackNet wrapper
 ────────────────
-- Construit l’entrée attendue pour bg_mode='concat'
+- Construit l'entrée attendue pour bg_mode='concat'
   (median RGB + seq_len × RGB  →  (seq_len+1)×3 canaux)
 - Renvoie (bx, by, visibility) par frame
 - Stocke et dessine la trajectoire (longueur TRACKNET_TRAJ_LEN)
-- Si DEBUG_TRACKNET=True dans constants/config.py, affiche temps d’inférence
+- Si DEBUG_TRACKNET=True dans constants/config.py, affiche temps d'inférence
   et bbox de la balle à chaque appel.
 """
 
@@ -23,6 +23,7 @@ from utils.general import get_model, HEIGHT, WIDTH, predict_location
 
 class TrackNetWrapper:
     def __init__(self, ckpt_path=TRACKNET_CKPT, device="cuda:0"):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         ckpt      = torch.load(ckpt_path, map_location=device)
         self.mode = ckpt["param_dict"]["bg_mode"]          # 'concat'
         self.seq  = ckpt["param_dict"]["seq_len"]          # 8
@@ -33,7 +34,7 @@ class TrackNetWrapper:
 
         self.device = device
         self.buf    = collections.deque(maxlen=self.seq)            # 8 frames RGB
-        self.traj   = collections.deque(maxlen=TRACKNET_TRAJ_LEN)
+        self.traj   = collections.deque(maxlen=TRACKNET_TRAJ_LEN)    # stocke (pt, color)
         self.median_rgb = None                                      # calc. 1×
 
         if DEBUG_TRACKNET:
@@ -41,7 +42,7 @@ class TrackNetWrapper:
 
     # ------------------------------------------------------------------ #
     def _prep(self, frames_rgb):
-        """Prépare l’entrée concat : median RGB + seq × RGB."""
+        """Prépare l'entrée concat : median RGB + seq × RGB."""
         frames = [cv2.resize(f, (WIDTH, HEIGHT)) for f in frames_rgb]
 
         # médiane unique
@@ -90,10 +91,9 @@ class TrackNetWrapper:
         by = int((y1 + h/2) * H / HEIGHT)
         self.traj.append((bx, by))
         return bx, by, 1.0
-
     # ------------------------------------------------------------------ #
-    def draw_traj(self, frame_bgr):
+    def draw_traj(self, frame_bgr,color):
         for pt in self.traj:
-            if pt is not None:
-                cv2.circle(frame_bgr, pt, 3, (0,255,255), -1)
+                if pt is not None:
+                    cv2.circle(frame_bgr, pt, 3 ,color, -1)
         return frame_bgr

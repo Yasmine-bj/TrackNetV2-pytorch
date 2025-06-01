@@ -13,13 +13,15 @@ class AuthManager:
     def login(self):
         response = requests.post(f"{API_BASE_URL}/auth/login", json=LOGIN_CREDENTIALS)
         if response.status_code == 200:
-            data = response.json()["data"]
+            print("🔑 Connexion réussie !")
+            resp_json = response.json()
+            # Accès à la bonne profondeur
+            data = resp_json["data"]["data"]
             self.access_token = data["access_token"]
             self.refresh_token = data["refresh_token"]
             self.expires_at = time.time() + data["expires_in"] - 30  # 30s de marge
         else:
             raise Exception(f"Login failed: {response.status_code} → {response.text}")
-
     def is_token_expired(self):
         return time.time() >= self.expires_at
 

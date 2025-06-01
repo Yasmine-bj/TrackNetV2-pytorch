@@ -24,6 +24,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application
 COPY . .
+RUN ls -R /app
 
 # Create necessary directories
 RUN mkdir -p Enregistrement/recordings output/csv
